@@ -5,11 +5,13 @@ Author: Biao Li (2016)
 
 Purpose: Implementation of genetic algorithm for searching optimized parameter combinations
 
-Description:
+Description: see https://github.com/libiaospe/genetAlgo for details
+
+Run >> python GeneticAlgorithm.py -h
 '''
 
 import random, os, sys, pickle, math, copy
-import logging
+import logging, argparse, imp
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 import sqlite3
 
@@ -121,7 +123,8 @@ class Simulator():
         # calculate the fitness value
         try:
             fitness = fitnessFunc(parDict)
-        except:
+        except Exception, e:
+            print e
             raise ValueError("Check Input! Fitness function fails to run on the following parameter combination!\n%s" % '\n'.join(["{} = {}".format(i,j) for i,j in zip(parDict.keys(), parDict.values())]))
         
         # save top 'numTopFitToSave' fitness values and parCombos to self.topFitness and self.topPars
@@ -424,7 +427,107 @@ def saveParsToDB(fileName, tableName='pars'):
     return 
 
 
+def parser_argument(parser):
+    parser.add_argument('-c', '--config_file',
+                        type=str,
+                        required=True,
+                        help='''Path to configuration file which stores parameter space information''')
+    
+    parser.add_argument('-f', '--fitness_func',
+                        type=str,
+                        required=True,
+                        help='''Path to *.py file which implements the 'fitnessFunc' to evaluate the fitness of each parameter combination''')
+    
+    parser.add_argument('-p', '--pop_file',
+                        type=str,
+                        default=None,
+                        help=''' (optional) Path to *.pop file which will be loaded and used as the ancestral population. If unspecified the program will randomly generate parameter combinations to form the ancestral population''')
+    
+    parser.add_argument('-s', '--size',
+                        type=int,
+                        default=100,
+                        help='''Population size (number of individuals per generation), default to 100''')
+    
+    parser.add_argument('-g', '--gen',
+                        type=int,
+                        default=50,
+                        help='''Number of generations to evolve, default to 50''')
+    
+    parser.add_argument('-r', '--crossover',
+                        type=float,
+                        default=0.5,
+                        help='''Probability of crossover during each mating event, default to 0.5''')
+    
+    parser.add_argument('-m', '--mutation',
+                        type=float,
+                        default=0.05,
+                        help='''Probability of mutation on each variant site, default to 0.05''')
+    
+    parser.add_argument('-n', '--num_topfit',
+                        type=int,
+                        default=100,
+                        help='''Number of top-fit parameter combinations to save, default to 100''')
+    
+    parser.add_argument('-o', '--out_prefix',
+                        type=str,
+                        default='result',
+                        help='''Path to (prefix) of output file name, e.g. /path/to/foo, default to 'result' in the current directory''')
+    
+    parser.add_argument('-a', '--save_at',
+                        type=int,
+                        default=5,
+                        help='''Save the evolved population and top fits every 'save_at' generations, default to 5''')
+    
+    parser.add_argument('--debug',
+                        default=False,
+                        action='store_true',
+                        help=argparse.SUPPRESS)
+
+
+
+def main_func(args):
+
+    paramDict = parseConfigFile(args.config_file)
+    
+    fitnessFunc = imp.load_source('fitnessFunc', args.fitness_func).fitnessFunc
+    
+    initPopFile = args.pop_file
+    
+    popSize = args.size
+    numGen = args.gen
+    probCross = args.crossover
+    probMut = args.mutation
+    
+    numTopFitToSave = args.num_topfit
+    
+    
+    
+    
+
+
+
 if __name__ == '__main__':
+    
+    #master_parser = argparse.ArgumentParser(
+    #    description = '''A heuristic parameter searching program for optimization.
+    #    ''',
+    #    prog = 'genetalgo',
+    #    epilog = '''Biao Li (biaol@bcm.edu) (c) 2016'''
+    #)
+    #master_parser.add_argument('--version', action='version', version='0.1-rc')
+    #parser_argument(master_parser)
+    #master_parser.set_defaults(func=main_func)
+    #
+    ## getting arguments
+    #args = master_parser.parse_args()
+    #if args.debug:
+    #    args.func(args)
+    #else:
+    #    try:
+    #        args.func(args)
+    #    except Exception as e:
+    #        logging.error(e)
+    #        sys.exit('An ERROR has occured: {}'.format(e))
     
     
     ####################### 04-15-2016 ###################
@@ -432,15 +535,13 @@ if __name__ == '__main__':
     
     ## step 2 - get fitness function
     
-    def getFitnessFunc(target = 0):
+    
         
-        def fitnessFunc(parDict):
-            fitness = (parDict['a'] * (parDict['b']**0.5) * parDict['c'] * parDict['d'] + parDict['e'])**0.5
-            return fitness
     
-        return fitnessFunc
     
-    fitnessFunc = getFitnessFunc()
+       
+    
+    #fitnessFunc = getFitnessFunc()
     
     ## step 3 - config Simulator
     numGen = 50
@@ -453,11 +554,13 @@ if __name__ == '__main__':
     paramDict['c'] = [2.5]
     paramDict['d'] = [int(i) for i in createParamCombo([100, 200], 128)]
     paramDict['e'] = 1.25
+    paramDict['f'] = ['a', 'ab', 'abc', 'abcd']
     
-    simu = Simulator(paramDict, numTopFitToSave=25, saveAt=5, initPopFile='result.pop')
+    
+    simu = Simulator(paramDict, numTopFitToSave=25, saveAt=5)
     
     ## step 4 - evolve
-    tmp = simu.evolve(numGen=numGen, popSize=popSize, probCross=.5, probMut=.05, fitnessFunc=fitnessFunc)
+    tmp = simu.evolve(numGen=numGen, popSize=popSize, probCross=.5, probMut=.05, fitnessFunc=fitnessFunc, initPopFile=None)
     
     ## step 5 - save results to db
     saveParsToDB('result.fit', 'result')
