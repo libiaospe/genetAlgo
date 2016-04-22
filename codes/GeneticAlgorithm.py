@@ -489,20 +489,39 @@ def parser_argument(parser):
                         help=argparse.SUPPRESS)
 
 
+def parseConfigFile(configFile):
+    
+    paramDict = {}
+    with open(configFile, 'r') as fi:
+        lines = fi.readlines()
+    
+    for line in lines:
+        
+        if line.startswith('#'):
+            continue
+        
+        line = line.strip()
+        # sep param name from range value
+      
+        try:  
+            par, tmp = line.split('=')
+            tmp = tmp.split('|')
+        except:
+            continue
+        
+        if len(tmp) == 1:  # if exact value(s)
+            paramDict[par] = eval(tmp[0])
+        else:   # range -> values
+            paramDict[par] = createParamCombo(eval(tmp[0]), eval(tmp[1]))
+    
+    return paramDict
+
+
+
+
 def main_func(args):
 
     paramDict = parseConfigFile(args.config_file)
-    
-    
-    paramDict = {}
-    paramDict['a'] = [int(i) for i in createParamCombo([1, 64], 64)]
-    paramDict['b'] = [int(i) for i in createParamCombo([11, 18], 8)]
-    paramDict['c'] = [2.5]
-    paramDict['d'] = [int(i) for i in createParamCombo([100, 200], 128)]
-    paramDict['e'] = 1.25
-    paramDict['f'] = ['a', 'ab', 'abc', 'abcd']
-    
-    
     
     fitnessFunc = imp.load_source('fitnessFunc', args.fitness_func).fitnessFunc
     
@@ -517,7 +536,7 @@ def main_func(args):
     saveAt = args.save_at
     
     out_prefix = args.out_prefix
-    table_name = args.table_table
+    table_name = args.table_name
     
     # run evolution
     simu = Simulator(paramDict, numTopFitToSave=numTopFitToSave, saveAt=saveAt, initPopFile=initPopFile, outFile=out_prefix)
@@ -555,42 +574,6 @@ if __name__ == '__main__':
         except Exception as e:
             logging.error(e)
             sys.exit('An ERROR has occured: {}'.format(e))
-    
-    
-    ####################### 04-15-2016 ###################
-    ## Step 1 - parse argument (including parameter file, fitness_function.py, command opt - numGene, popSize, probCross, probMut, output, savePop, loadPop, numTopFitToSave)
-    
-    ## step 2 - get fitness function
-    
-    
-        
-    
-    
-       
-    
-    #fitnessFunc = getFitnessFunc()
-    
-    ## step 3 - config Simulator
-    numGen = 50
-    popSize = 50
-    
-    # paramDict: a - range(1, 16), b - range(11,18), c - constant = 2.5
-    paramDict = {}
-    paramDict['a'] = [int(i) for i in createParamCombo([1, 64], 64)]
-    paramDict['b'] = [int(i) for i in createParamCombo([11, 18], 8)]
-    paramDict['c'] = [2.5]
-    paramDict['d'] = [int(i) for i in createParamCombo([100, 200], 128)]
-    paramDict['e'] = 1.25
-    paramDict['f'] = ['a', 'ab', 'abc', 'abcd']
-    
-    
-    simu = Simulator(paramDict, numTopFitToSave=25, saveAt=5)
-    
-    ## step 4 - evolve
-    tmp = simu.evolve(numGen=numGen, popSize=popSize, probCross=.5, probMut=.05, fitnessFunc=fitnessFunc, initPopFile=None)
-    
-    ## step 5 - save results to db
-    saveParsToDB('result.fit', 'result')
     
     sys.exit()
     
