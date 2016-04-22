@@ -1,6 +1,6 @@
 # Example
 
-##å Below is a minimal example demonstrating how to specify required input arguments. 
+## Below is a minimal example demonstrating how to specify required input arguments. 
 
 - *genetAlgo* has two required two input file, a configuration file in plain text (*.config) and a python file (*.py) implementing the fitness function
 
