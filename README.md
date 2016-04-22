@@ -17,11 +17,8 @@ conda install progressbar
 1. Download [genetAlgo program folder] (https://github.com/libiaospe/genetAlgo/archive/master.zip)
 2. Unzip and go to /genetAlgo/codes/
 3. Create parameter space configuration file and fitness function fiel, see [an example](https://github.com/libiaospe/genetAlgo/blob/master/EXAMPLE.md)
-4. Run 
-```
-python GeneticAlgorithm.py -h
-```
-for how to specify command options.
+4. Run `python GeneticAlgorithm.py -h` for how to specify command options.
+
 5. Test run the example below and view the result file of optimized paramters that attain best fits
 ```
 python GeneticAlgorithm.py -c example.config -f fitnessFunc.py -s 100 -g 100 -r 0.5 -m 0.05 -n 200 -o result -a 5
