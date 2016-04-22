@@ -517,8 +517,6 @@ def parseConfigFile(configFile):
     return paramDict
 
 
-
-
 def main_func(args):
 
     paramDict = parseConfigFile(args.config_file)
@@ -547,10 +545,8 @@ def main_func(args):
         saveParsToDB(out_prefix+'.fit', table_name)
     
     return
-    
-    
 
-
+    
 
 if __name__ == '__main__':
     
