@@ -478,16 +478,31 @@ def parser_argument(parser):
                         default=5,
                         help='''Save the evolved population and top fits every 'save_at' generations, default to 5''')
     
+    parser.add_argument('-t', '--table_name',
+                        type=str,
+                        default=None,
+                        help='''(optional) Save top-fit parameters to table named by '--table_name' of the SQL database, *.db file. Leave it unspecified to skip this step''')
+    
     parser.add_argument('--debug',
                         default=False,
                         action='store_true',
                         help=argparse.SUPPRESS)
 
 
-
 def main_func(args):
 
     paramDict = parseConfigFile(args.config_file)
+    
+    
+    paramDict = {}
+    paramDict['a'] = [int(i) for i in createParamCombo([1, 64], 64)]
+    paramDict['b'] = [int(i) for i in createParamCombo([11, 18], 8)]
+    paramDict['c'] = [2.5]
+    paramDict['d'] = [int(i) for i in createParamCombo([100, 200], 128)]
+    paramDict['e'] = 1.25
+    paramDict['f'] = ['a', 'ab', 'abc', 'abcd']
+    
+    
     
     fitnessFunc = imp.load_source('fitnessFunc', args.fitness_func).fitnessFunc
     
@@ -499,8 +514,20 @@ def main_func(args):
     probMut = args.mutation
     
     numTopFitToSave = args.num_topfit
+    saveAt = args.save_at
     
+    out_prefix = args.out_prefix
+    table_name = args.table_table
     
+    # run evolution
+    simu = Simulator(paramDict, numTopFitToSave=numTopFitToSave, saveAt=saveAt, initPopFile=initPopFile, outFile=out_prefix)
+    tmp = simu.evolve(numGen=numGen, popSize=popSize, probCross=probCross, probMut=probMut, fitnessFunc=fitnessFunc)
+    
+    # save results to db (optional)
+    if table_name:  
+        saveParsToDB(out_prefix+'.fit', table_name)
+    
+    return
     
     
 
@@ -508,26 +535,26 @@ def main_func(args):
 
 if __name__ == '__main__':
     
-    #master_parser = argparse.ArgumentParser(
-    #    description = '''A heuristic parameter searching program for optimization.
-    #    ''',
-    #    prog = 'genetalgo',
-    #    epilog = '''Biao Li (biaol@bcm.edu) (c) 2016'''
-    #)
-    #master_parser.add_argument('--version', action='version', version='0.1-rc')
-    #parser_argument(master_parser)
-    #master_parser.set_defaults(func=main_func)
-    #
-    ## getting arguments
-    #args = master_parser.parse_args()
-    #if args.debug:
-    #    args.func(args)
-    #else:
-    #    try:
-    #        args.func(args)
-    #    except Exception as e:
-    #        logging.error(e)
-    #        sys.exit('An ERROR has occured: {}'.format(e))
+    master_parser = argparse.ArgumentParser(
+        description = '''A heuristic parameter searching program for optimization.
+        ''',
+        prog = 'genetalgo',
+        epilog = '''Biao Li (biaol@bcm.edu) (c) 2016'''
+    )
+    master_parser.add_argument('--version', action='version', version='0.1-rc')
+    parser_argument(master_parser)
+    master_parser.set_defaults(func=main_func)
+    
+    # getting arguments
+    args = master_parser.parse_args()
+    if args.debug:
+        args.func(args)
+    else:
+        try:
+            args.func(args)
+        except Exception as e:
+            logging.error(e)
+            sys.exit('An ERROR has occured: {}'.format(e))
     
     
     ####################### 04-15-2016 ###################
